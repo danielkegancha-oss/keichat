@@ -1,0 +1,19 @@
+
+{
+  "name": "KeiChat",
+  "short_name": "KeiChat",
+  "description": "A simple chat app",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#eaf0f8",
+  "theme_color": "#1769aa",
+  "icons": [
+    {
+      "src": "icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ]
+}

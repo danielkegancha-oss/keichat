@@ -1,0 +1,285 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeiChat</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background: #eaf0f8;
+            margin: 0;
+            padding: 20px;
+        }
+
+        .chat-app {
+            max-width: 400px;
+            margin: auto;
+            background: white;
+            border-radius: 15px;
+            overflow: hidden;
+        }
+
+        header {
+            background: #1769aa;
+            color: white;
+            padding: 15px;
+            text-align: center;
+        }
+
+        #joinArea {
+            padding: 15px;
+        }
+
+        #messages {
+            height: 300px;
+            padding: 15px;
+            overflow-y: auto;
+        }
+
+        .message {
+            background: #d9ecff;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 10px;
+            overflow-wrap: anywhere;
+        }
+
+        .username {
+            font-weight: bold;
+            color: #1769aa;
+        }
+
+        .time {
+            display: block;
+            font-size: 11px;
+            color: #555;
+            margin-top: 5px;
+        }
+
+        .input-area {
+            display: flex;
+            gap: 8px;
+            padding: 12px;
+        }
+
+        input {
+            box-sizing: border-box;
+            width: 100%;
+            min-width: 0;
+            padding: 10px;
+        }
+
+        button {
+            background: #1769aa;
+            color: white;
+            border: none;
+            padding: 10px 14px;
+            border-radius: 6px;
+            cursor: pointer;
+        }
+
+        #status {
+            padding: 0 12px;
+            color: #b42318;
+            font-size: 13px;
+        }
+
+        #chatArea {
+            display: none;
+        }
+    </style>
+    <link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#1769aa">
+</head>
+
+<body>
+    <div class="chat-app">
+        <header>
+            <h2>KeiChat</h2>
+            <p>Your conversations start here</p>
+        </header>
+
+        <div id="joinArea">
+            <p>Choose a username to join the chat.</p>
+
+            <input id="usernameInput"
+                   type="text"
+                   placeholder="Enter your username">
+
+            <br><br>
+
+            <button onclick="joinChat()">Join Chat</button>
+        </div>
+
+        <div id="chatArea">
+            <p id="welcome"></p>
+
+            <div id="messages"></div>
+
+            <p id="status"></p>
+
+            <div class="input-area">
+                <input id="messageInput"
+                       type="text"
+                       placeholder="Type a message">
+
+                <button onclick="sendMessage()">Send</button>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let username = "";
+
+        // Load the saved username.
+        const savedUsername =
+            localStorage.getItem("keichatUsername");
+
+        if (savedUsername) {
+            document.getElementById("usernameInput").value =
+                savedUsername;
+        }
+
+        // Load previously saved messages.
+        let chatMessages = JSON.parse(
+            localStorage.getItem("keichatMessages") || "[]"
+        );
+
+        function displayMessages() {
+            const messages =
+                document.getElementById("messages");
+
+            messages.replaceChildren();
+
+            if (chatMessages.length === 0) {
+                const welcome = document.createElement("div");
+                welcome.className = "message";
+                welcome.textContent = "Welcome to KeiChat!";
+                messages.appendChild(welcome);
+            }
+
+            chatMessages.forEach(function(item) {
+                const bubble = document.createElement("div");
+                bubble.className = "message";
+
+                const name = document.createElement("div");
+                name.className = "username";
+                name.textContent = item.username;
+
+                const text = document.createElement("div");
+                text.textContent = item.message;
+
+                const time = document.createElement("span");
+                time.className = "time";
+                time.textContent = item.time;
+
+                bubble.appendChild(name);
+                bubble.appendChild(text);
+                bubble.appendChild(time);
+
+                messages.appendChild(bubble);
+            });
+
+            messages.scrollTop = messages.scrollHeight;
+        }
+
+        function joinChat() {
+            const input =
+                document.getElementById("usernameInput");
+
+            username = input.value.trim();
+
+            if (username === "") {
+                alert("Please enter a username.");
+                return;
+            }
+
+            // Save the username.
+            localStorage.setItem(
+                "keichatUsername", username
+            );
+
+            document.getElementById("joinArea").style.display =
+                "none";
+
+            document.getElementById("chatArea").style.display =
+                "block";
+
+            document.getElementById("welcome").textContent =
+                "Welcome, " + username + "!";
+
+            displayMessages();
+        }
+
+        function sendMessage() {
+            const input =
+                document.getElementById("messageInput");
+
+            const message = input.value.trim();
+
+            const status =
+                document.getElementById("status");
+
+            if (message === "") {
+                status.textContent =
+                    "Please type a message first.";
+                return;
+            }
+
+            status.textContent = "";
+
+            // Add the new message to our list.
+            chatMessages.push({
+                username: username,
+                message: message,
+                time: new Date().toLocaleTimeString()
+            });
+
+            // Keep the latest 100 messages.
+            chatMessages = chatMessages.slice(-100);
+
+            // Save all messages in this browser.
+            localStorage.setItem(
+                "keichatMessages",
+                JSON.stringify(chatMessages)
+            );
+
+            displayMessages();
+
+            input.value = "";
+            input.focus();
+        }
+
+        document.getElementById("messageInput")
+            .addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    sendMessage();
+                }
+            });
+
+        document.getElementById("usernameInput")
+            .addEventListener("keydown", function(event) {
+                if (event.key === "Enter") {
+                    joinChat();
+                }
+            });
+
+        // Prepare the message display.
+        displayMessages();
+        if ("serviceWorker" in navigator) {
+    window.addEventListener("load", function() {
+        navigator.serviceWorker.register("./service-worker.js")
+            .then(function() {
+                console.log("KeiChat is ready for offline use.");
+            })
+            .catch(function(error) {
+                console.error("Service worker error:", error);
+            });
+    });
+}
+    </script>
+</body>
+</html>
